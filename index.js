@@ -211,3 +211,40 @@ client.on("interactionCreate", async interaction => {
 });
 
 client.login(process.env.TOKEN);
+if (interaction.commandName === "timeout") {
+    if (!interaction.member.permissions.has("ModerateMembers"))
+        return interaction.reply({ content: "Non hai i permessi.", ephemeral: true });
+
+    const user = interaction.options.getMember("utente");
+    const duration = interaction.options.getInteger("minuti");
+    const reason = interaction.options.getString("motivo") || "Nessun motivo";
+
+    await user.timeout(duration * 60 * 1000, reason);
+    interaction.reply(`⏳ ${user} è stato messo in timeout per ${duration} minuti.`);
+}
+if (interaction.commandName === "purge") {
+    if (!interaction.member.permissions.has("ManageMessages"))
+        return interaction.reply({ content: "Non hai i permessi.", ephemeral: true });
+
+    const amount = interaction.options.getInteger("numero");
+
+    await interaction.channel.bulkDelete(amount, true);
+    interaction.reply(`🧹 Eliminati ${amount} messaggi.`);
+}
+const fs = require("fs");
+
+if (interaction.commandName === "warn") {
+    if (!interaction.member.permissions.has("ModerateMembers"))
+        return interaction.reply({ content: "Non hai i permessi.", ephemeral: true });
+
+    const user = interaction.options.getUser("utente");
+    const reason = interaction.options.getString("motivo");
+
+    let warns = JSON.parse(fs.readFileSync("warns.json", "utf8"));
+    if (!warns[user.id]) warns[user.id] = [];
+    warns[user.id].push({ reason, by: interaction.user.id, date: Date.now() });
+
+    fs.writeFileSync("warns.json", JSON.stringify(warns, null, 2));
+
+    interaction.reply(`⚠️ ${user} è stato warnato: **${reason}**`);
+}
